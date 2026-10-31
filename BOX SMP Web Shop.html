@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOX SMP Web Shop</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#050907',
+                        cardBg: '#0e1712',
+                        neonGreen: '#00ff88',
+                        neonGlow: 'rgba(0, 255, 136, 0.35)',
+                        borderGreen: '#1b3324',
+                        dangerRed: '#ff3333'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050907; }
+        ::-webkit-scrollbar-thumb { background: #1b3324; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00ff88; }
+        .neon-shadow { box-shadow: 0 0 15px rgba(0, 255, 136, 0.25); }
+        .neon-text-glow { text-shadow: 0 0 8px rgba(0, 255, 136, 0.6); }
+    </style>
+</head>
+<body class="bg-darkBg text-gray-100 min-h-screen pb-24 selection:bg-neonGreen selection:text-black font-sans">
+
+    <!-- Toast Notification Banner -->
+    <div id="toast" class="fixed top-5 right-5 z-50 bg-neonGreen text-black font-extrabold px-5 py-3 rounded-xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none translate-y-[-20px] border border-black">
+        Notification
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="bg-cardBg/95 backdrop-blur border-b-2 border-neonGreen px-4 sm:px-8 py-3.5 sticky top-0 z-40 shadow-lg shadow-neonGlow flex justify-between items-center">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="switchTab('home')">
+            <span class="text-2xl">📦</span>
+            <span class="text-lg sm:text-xl font-black text-neonGreen tracking-wider neon-text-glow">BOX SMP SHOP</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="topAuthBtn" onclick="handleTopAccountClick()" class="bg-neonGreen text-black font-extrabold px-4 py-2 rounded-xl text-xs sm:text-sm hover:opacity-90 transition shadow-[0_0_12px_#00ff88]">
+                Login / Sign Up
+            </button>
+            <div onclick="openNotifications()" class="relative cursor-pointer bg-darkBg border border-borderGreen p-2.5 rounded-xl hover:border-neonGreen transition text-xs">
+                🔔 <span id="notifBadge" class="absolute -top-1 -right-1 bg-dangerRed text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 mt-6">
+
+        <!-- HOME VIEW -->
+        <section id="view-home" class="view-section">
+            <div class="mb-6">
+                <div class="relative max-w-2xl mx-auto">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-neonGreen pointer-events-none">🔍</span>
+                    <input type="text" id="searchInput" oninput="renderHomeItems()" placeholder="Search Minecraft items, ranks, kits..." class="w-full pl-11 pr-4 py-3 bg-cardBg border-2 border-borderGreen rounded-2xl text-sm sm:text-base text-white outline-none focus:border-neonGreen shadow-md transition">
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-black text-neonGreen border-l-4 border-neonGreen pl-3">2D Minecraft Items</h2>
+                    <p class="text-xs sm:text-sm text-gray-400 mt-1 pl-4">Add gear to cart and checkout instantly with custom payment scanners!</p>
+                </div>
+            </div>
+            <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+        </section>
+
+        <!-- CART VIEW -->
+        <section id="view-cart" class="view-section hidden">
+            <div class="max-w-2xl mx-auto bg-cardBg border-2 border-neonGreen p-6 sm:p-8 rounded-2xl shadow-2xl shadow-neonGlow">
+                <h2 class="text-2xl font-bold text-neonGreen mb-4 flex items-center gap-2">
+                    <span>🛒 Cart & Dynamic Scanner Checkout</span>
+                </h2>
+                
+                <div id="cartItemsList" class="space-y-3 mb-6 max-h-56 overflow-y-auto pr-1"></div>
+
+                <div class="border-t border-borderGreen pt-4 mb-4 space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Total Amount:</span>
+                        <span id="cartSubtotal" class="font-black text-neonGreen text-xl">₹0</span>
+                    </div>
+                </div>
+
+                <!-- Dynamic Scanner Section -->
+                <div class="mb-5 text-center bg-darkBg p-5 rounded-2xl border-2 border-neonGreen/40 shadow-inner">
+                    <label class="block text-xs text-neonGreen mb-2 font-bold uppercase tracking-wider">
+                        📱 Dynamic Payment Scanner for Cart Item(s)
+                    </label>
+                    <div id="cartQrDisplayArea" class="mx-auto flex flex-col items-center justify-center min-h-[160px]">
+                        <!-- Dynamic item QR image renders here -->
+                    </div>
+                    <p id="qrHelpText" class="text-[11px] text-gray-400 mt-2">Scan the exact QR code above using any UPI app to pay for your selected items.</p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs text-neonGreen mb-1 font-bold uppercase">Minecraft Username (IGN)</label>
+                    <input type="text" id="buyerIGN" placeholder="e.g. not_gaganxds" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                </div>
+
+                <div class="mb-4 flex items-center gap-2">
+                    <input type="checkbox" id="agreementCheck" class="accent-neonGreen cursor-pointer w-4 h-4">
+                    <label for="agreementCheck" class="text-xs text-gray-300">I agree to the <span onclick="openPrivacyModal()" class="text-neonGreen underline cursor-pointer font-bold">Privacy Policy & Terms</span>.</label>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-xs text-neonGreen mb-1 font-bold uppercase">Upload Payment Screenshot Proof</label>
+                    <input type="file" id="paymentProofFile" accept="image/*" class="w-full p-2.5 bg-darkBg border border-borderGreen rounded-xl text-xs text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-neonGreen file:text-black cursor-pointer">
+                </div>
+
+                <button onclick="submitOrder()" class="w-full bg-neonGreen text-black font-extrabold py-3.5 rounded-xl transition hover:opacity-90 shadow-[0_0_15px_#00ff88]">Submit Order</button>
+            </div>
+        </section>
+
+        <!-- ACCOUNT VIEW -->
+        <section id="view-account" class="view-section hidden max-w-xl mx-auto">
+            <div class="bg-cardBg border-2 border-neonGreen p-6 sm:p-8 rounded-2xl shadow-2xl shadow-neonGlow space-y-6">
+                
+                <!-- Display Profile Box -->
+                <div id="accountDisplayBox" class="text-center space-y-6">
+                    <div id="accountAvatarInitials" class="w-28 h-28 mx-auto bg-neonGreen/10 border-4 border-neonGreen rounded-full flex items-center justify-center text-4xl font-black text-neonGreen shadow-[0_0_20px_#00ff88]">
+                        GS
+                    </div>
+
+                    <div>
+                        <h2 id="accountDisplayName" class="text-2xl font-black text-neonGreen mb-1">Gagan shina</h2>
+                        <p id="accountDisplayRole" class="text-xs text-gray-400 font-bold uppercase tracking-wider">Store Administrator</p>
+                    </div>
+
+                    <div class="bg-darkBg p-4 rounded-xl border border-borderGreen text-left space-y-3 text-xs sm:text-sm">
+                        <div class="flex justify-between border-b border-borderGreen/50 pb-2">
+                            <span class="text-gray-400">Display Name:</span> 
+                            <span id="accDetailUser" class="font-bold text-white">Gagan shina</span>
+                        </div>
+                        <div class="flex justify-between border-b border-borderGreen/50 pb-2">
+                            <span class="text-gray-400">Minecraft IGN:</span> 
+                            <span id="accDetailMc" class="font-bold text-neonGreen">not_gaganxds</span>
+                        </div>
+                        <div class="flex justify-between border-b border-borderGreen/50 pb-2">
+                            <span class="text-gray-400">Email ID:</span> 
+                            <span id="accDetailEmail" class="font-bold text-white">boxsmp@gmail.com</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Role:</span> 
+                            <span id="accDetailRole" class="font-bold text-neonGreen">Owner / Admin</span>
+                        </div>
+                    </div>
+
+                    <button onclick="enterEditAccountMode()" class="w-full bg-neonGreen text-black font-extrabold py-3 rounded-xl transition hover:opacity-90 text-sm shadow-[0_0_10px_#00ff88]">
+                        ✏️ Edit Account Profile
+                    </button>
+                </div>
+
+                <!-- Edit Profile Box -->
+                <div id="accountEditBox" class="hidden space-y-4">
+                    <h2 class="text-xl font-bold text-neonGreen text-center mb-2">Edit Account Profile</h2>
+                    
+                    <div>
+                        <label class="block text-xs text-neonGreen mb-1 font-bold">Display Name</label>
+                        <input type="text" id="editAccName" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-neonGreen mb-1 font-bold">Minecraft IGN</label>
+                        <input type="text" id="editAccMc" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-neonGreen mb-1 font-bold">Email ID</label>
+                        <input type="email" id="editAccEmail" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-neonGreen mb-1 font-bold">Current Password (Required to Save)</label>
+                        <input type="password" id="editAccCurrentPass" placeholder="Enter current password" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-neonGreen mb-1 font-bold">New Password (Optional)</label>
+                        <input type="password" id="editAccNewPass" placeholder="Leave blank to keep current password" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button onclick="saveAccountEdits()" class="flex-1 bg-neonGreen text-black font-extrabold py-3 rounded-xl transition hover:opacity-90 text-sm shadow-[0_0_10px_#00ff88]">
+                            💾 Save Changes
+                        </button>
+                        <button onclick="cancelAccountEdits()" class="flex-1 border border-dangerRed text-dangerRed font-extrabold py-3 rounded-xl hover:bg-dangerRed hover:text-white transition text-sm">
+                            ✖ Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Logout Button -->
+                <div class="border-t border-borderGreen pt-4">
+                    <button onclick="handleLogout()" class="w-full border-2 border-dangerRed text-dangerRed font-extrabold py-3 rounded-xl hover:bg-dangerRed hover:text-white transition text-sm">
+                        🚪 Logout
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ADMIN UPLOAD & CONTROL VIEW -->
+        <section id="view-upload" class="view-section hidden space-y-8 mb-12">
+            <div class="bg-cardBg border-2 border-neonGreen p-6 sm:p-8 rounded-2xl shadow-2xl shadow-neonGlow">
+                <div class="flex justify-between items-center mb-6 pb-4 border-b border-borderGreen">
+                    <div>
+                        <h2 class="text-2xl font-black text-neonGreen">👑 Admin Control Panel</h2>
+                        <p class="text-xs text-gray-400">Logged in as Owner: <span class="text-neonGreen font-bold" id="adminPanelUserLabel">Gagan shina</span></p>
+                    </div>
+                </div>
+
+                <!-- Promo Code Creation -->
+                <div class="mb-8 p-5 bg-darkBg border border-borderGreen rounded-xl">
+                    <h3 class="text-lg font-bold text-neonGreen mb-3">🏷️ Create Promo Code</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                        <input type="text" id="promoName" placeholder="Promo Code (e.g. BOX50)" class="p-3 bg-cardBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                        <input type="number" id="promoDiscount" placeholder="Discount (₹)" class="p-3 bg-cardBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                        <input type="number" id="promoLimit" placeholder="Usage Limit" class="p-3 bg-cardBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                    </div>
+                    <button onclick="createPromoCode()" class="border border-neonGreen text-neonGreen px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-neonGreen hover:text-black transition mb-4">Create Promo Code</button>
+                    <div id="adminPromoList" class="space-y-2"></div>
+                </div>
+
+                <!-- Item Upload & 2D Icon Generator -->
+                <div class="mb-8 p-5 bg-darkBg border border-borderGreen rounded-xl">
+                    <h3 class="text-lg font-bold text-neonGreen mb-3">📦 Upload New Item & QR Scanner</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                        <input type="text" id="uploadName" oninput="previewAutoIcon()" placeholder="Item Name (e.g. Nether Blade)" class="p-3 bg-cardBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                        <input type="number" id="uploadPrice" placeholder="Price (₹)" class="p-3 bg-cardBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                    </div>
+                    <div class="mb-4">
+                        <input type="text" id="uploadDesc" placeholder="Item Description" class="w-full p-3 bg-cardBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                    </div>
+                    <div class="mb-4 text-center p-3 bg-cardBg border border-borderGreen rounded-xl">
+                        <label class="block text-xs text-neonGreen mb-2 font-bold">2D Minecraft Icon Preview:</label>
+                        <div id="autoIconPreviewBox" class="py-2">
+                            <svg class="w-16 h-16 mx-auto" viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" fill="#00ff88"/></svg>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-xs text-neonGreen mb-1 font-bold">Upload Specific Payment QR Scanner Image:</label>
+                        <input type="file" id="uploadQrFile" accept="image/*" class="w-full p-2.5 bg-darkBg border border-borderGreen rounded-xl text-xs text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-neonGreen file:text-black cursor-pointer">
+                    </div>
+                    <button onclick="publishNewItem()" class="bg-neonGreen text-black px-6 py-2.5 rounded-xl font-extrabold text-sm hover:opacity-90 transition shadow-[0_0_10px_#00ff88]">Publish Item</button>
+                </div>
+
+                <!-- Customer Orders -->
+                <div class="mb-8 p-5 bg-darkBg border border-borderGreen rounded-xl">
+                    <h3 class="text-lg font-bold text-neonGreen mb-3">📋 Customer Orders</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                            <thead>
+                                <tr class="border-b border-borderGreen text-neonGreen">
+                                    <th class="p-3">Order ID</th>
+                                    <th class="p-3">Minecraft IGN</th>
+                                    <th class="p-3">Items & Total</th>
+                                    <th class="p-3">Proof</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminOrderTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Manage Items -->
+                <div class="p-5 bg-darkBg border border-borderGreen rounded-xl">
+                    <h3 class="text-lg font-bold text-neonGreen mb-3">🛠️ Manage / Edit / Delete Store Items</h3>
+                    <div id="adminEditDeleteList" class="space-y-3"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bg-cardBg/95 backdrop-blur border-t-2 border-neonGreen fixed bottom-0 left-0 right-0 z-40 py-2 px-4 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
+        <div id="bottomNavContainer" class="max-w-md mx-auto flex justify-around items-center"></div>
+    </nav>
+
+    <!-- AUTHENTICATION MODAL -->
+    <div id="authModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+        <div class="bg-cardBg border-2 border-neonGreen p-6 sm:p-8 rounded-2xl w-full max-w-md relative shadow-2xl shadow-neonGlow">
+            <span onclick="closeAuthModal()" class="absolute top-4 right-5 text-xl font-bold text-neonGreen cursor-pointer">&times;</span>
+            
+            <div id="authFormContainer">
+                <h2 id="authModalTitle" class="text-2xl font-bold text-neonGreen mb-1">Login</h2>
+                <p id="authModalSub" class="text-xs text-gray-400 mb-5">Enter your account credentials</p>
+
+                <div id="signupExtraFields" class="hidden space-y-3 mb-3">
+                    <div>
+                        <label class="block text-xs text-neonGreen mb-1 font-bold">Minecraft Username (IGN)</label>
+                        <input type="text" id="regMinecraft" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-neonGreen mb-1 font-bold">Email ID</label>
+                        <input type="email" id="regEmail" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label id="usernameLabel" class="block text-xs text-neonGreen mb-1 font-bold">Username or Email</label>
+                    <input type="text" id="authInputUser" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                </div>
+                <div class="mb-5">
+                    <label class="block text-xs text-neonGreen mb-1 font-bold">Password</label>
+                    <input type="password" id="authInputPass" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+                </div>
+
+                <button onclick="handleAuthSubmit()" id="authActionBtn" class="w-full bg-neonGreen text-black font-extrabold py-3 rounded-xl transition hover:opacity-90 mb-4 text-sm shadow-[0_0_10px_#00ff88]">Login</button>
+                
+                <div class="text-center text-xs">
+                    <span id="authTogglePrompt" class="text-gray-400">Don't have an account?</span>
+                    <button onclick="toggleAuthMode()" id="authToggleLink" class="text-neonGreen font-bold underline ml-1">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRIVACY POLICY MODAL -->
+    <div id="privacyModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+        <div class="bg-cardBg border-2 border-neonGreen p-6 sm:p-8 rounded-2xl w-full max-w-lg relative shadow-2xl shadow-neonGlow max-h-[80vh] overflow-y-auto">
+            <span onclick="closePrivacyModal()" class="absolute top-4 right-5 text-xl font-bold text-neonGreen cursor-pointer">&times;</span>
+            <h2 class="text-2xl font-bold text-neonGreen mb-4">Privacy Policy & Terms</h2>
+            <div class="space-y-3 text-xs sm:text-sm text-gray-300 leading-relaxed">
+                <p><strong>1. Data Security & Storage:</strong> Your privacy is fully protected. Profiles and orders are stored locally in your browser session.</p>
+                <p><strong>2. Minecraft Username Usage:</strong> Your Minecraft IGN is strictly used to deliver purchased in-game items on BOX SMP.</p>
+                <p><strong>3. Payment Proofs:</strong> Screenshots submitted during checkout are solely reviewed by store administration for verification.</p>
+                <p><strong>4. Disclaimer:</strong> BOX SMP Web Shop is an independent store not affiliated with Mojang AB or Microsoft.</p>
+            </div>
+            <button onclick="closePrivacyModal()" class="w-full mt-6 bg-neonGreen text-black font-extrabold py-2.5 rounded-xl text-xs">I Agree</button>
+        </div>
+    </div>
+
+    <!-- EDIT ITEM MODAL FOR ADMIN -->
+    <div id="editItemModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+        <div class="bg-cardBg border-2 border-neonGreen p-6 sm:p-8 rounded-2xl w-full max-w-md relative shadow-2xl shadow-neonGlow">
+            <span onclick="closeEditModal()" class="absolute top-4 right-5 text-xl font-bold text-neonGreen cursor-pointer">&times;</span>
+            <h2 class="text-2xl font-bold text-neonGreen mb-4">Edit Store Item</h2>
+            <input type="hidden" id="editItemId">
+            <div class="mb-3">
+                <label class="block text-xs text-neonGreen mb-1 font-bold">Item Name</label>
+                <input type="text" id="editItemName" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+            </div>
+            <div class="mb-3">
+                <label class="block text-xs text-neonGreen mb-1 font-bold">Price (₹)</label>
+                <input type="number" id="editItemPrice" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+            </div>
+            <div class="mb-3">
+                <label class="block text-xs text-neonGreen mb-1 font-bold">Description</label>
+                <input type="text" id="editItemDesc" class="w-full p-3 bg-darkBg border border-borderGreen rounded-xl text-white outline-none focus:border-neonGreen text-sm">
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs text-neonGreen mb-1 font-bold">Upload New QR Scanner / Image</label>
+                <input type="file" id="editItemQrFile" accept="image/*" class="w-full p-2 bg-darkBg border border-borderGreen rounded-xl text-xs text-gray-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-neonGreen file:text-black cursor-pointer">
+                <div id="editItemQrPreview" class="mt-2 text-center"></div>
+            </div>
+            <button onclick="saveEditedItem()" class="w-full bg-neonGreen text-black font-extrabold py-3 rounded-xl transition hover:opacity-90 text-sm shadow-[0_0_10px_#00ff88]">Save Item Changes</button>
+        </div>
+    </div>
+
+    <!-- NOTIFICATIONS MODAL -->
+    <div id="notifModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+        <div class="bg-cardBg border-2 border-neonGreen p-6 sm:p-8 rounded-2xl w-full max-w-md relative shadow-2xl shadow-neonGlow">
+            <span onclick="document.getElementById('notifModal').classList.add('hidden')" class="absolute top-4 right-5 text-xl font-bold text-neonGreen cursor-pointer">&times;</span>
+            <h2 class="text-2xl font-bold text-neonGreen mb-4">Notifications</h2>
+            <div id="notifList" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const DEFAULT_OWNER = {
+            username: "Gagan shina",
+            password: "Gagan@12345",
+            minecraft: "not_gaganxds",
+            email: "boxsmp@gmail.com",
+            role: "Owner / Admin"
+        };
+
+        const defaultProducts = [
+            { id: 1, name: 'Enchanted Golden Apple', price: 90, desc: 'God GApple kit pack', qrImage: null },
+            { id: 2, name: 'VIP Rank (30 Days)', price: 150, desc: 'Exclusive perks & prefix', qrImage: null },
+            { id: 3, name: 'Nether Blade', price: 200, desc: 'Sharpness X sword', qrImage: null }
+        ];
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            if(!toast) return;
+            toast.innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+            }, 3000);
+        }
+
+        function initOwnerAccount() {
+            let users = [];
+            try { users = JSON.parse(localStorage.getItem('box_users')) || []; } catch(e) { users = []; }
+            const ownerExists = users.find(u => u.username === DEFAULT_OWNER.username || u.email === DEFAULT_OWNER.email);
+            if (!ownerExists) {
+                users.unshift(DEFAULT_OWNER);
+                localStorage.setItem('box_users', JSON.stringify(users));
+            }
+        }
+
+        function getProducts() { try { return JSON.parse(localStorage.getItem('box_products')) || defaultProducts; } catch(e) { return defaultProducts; } }
+        function setProducts(p) { localStorage.setItem('box_products', JSON.stringify(p)); }
+
+        function getPromos() { try { return JSON.parse(localStorage.getItem('box_promos')) || []; } catch(e) { return []; } }
+        function setPromos(p) { localStorage.setItem('box_promos', JSON.stringify(p)); }
+
+        function getCart() { try { return JSON.parse(localStorage.getItem('box_cart')) || []; } catch(e) { return []; } }
+        function setCart(c) { localStorage.setItem('box_cart', JSON.stringify(c)); }
+
+        function getOrders() { try { return JSON.parse(localStorage.getItem('box_orders')) || []; } catch(e) { return []; } }
+        function setOrders(o) { localStorage.setItem('box_orders', JSON.stringify(o)); }
+
+        function getUsers() { try { return JSON.parse(localStorage.getItem('box_users')) || []; } catch(e) { return []; } }
+        function setUsers(u) { localStorage.setItem('box_users', JSON.stringify(u)); }
+
+        function getNotifs() { try { return JSON.parse(localStorage.getItem('box_notifs')) || []; } catch(e) { return []; } }
+        function setNotifs(n) { localStorage.setItem('box_notifs', JSON.stringify(n)); }
+
+        // MANDATORY SECURITY RULE: Always start logged out (null)
+        let currentUser = null;
+        let isSignup = false;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initOwnerAccount();
+            renderHomeItems();
+            updateNavState();
+            updateBadges();
+        });
+
+        function getMinecraftSvg(nameOrType) {
+            const val = (nameOrType || '').toLowerCase();
+            if (val.includes('apple') || val.includes('gapple')) {
+                return `<svg class="w-20 h-20 mx-auto drop-shadow-[0_0_10px_rgba(255,51,51,0.6)] animate-pulse" viewBox="0 0 64 64"><rect x="28" y="8" width="8" height="10" fill="#8B4513"/><path d="M36 10 Q48 2 44 16 Q40 20 36 10" fill="#228B22"/><circle cx="32" cy="38" r="20" fill="#ff3333"/><circle cx="24" cy="30" r="4" fill="#ff9999"/></svg>`;
+            } else if (val.includes('vip') || val.includes('rank')) {
+                return `<svg class="w-20 h-20 mx-auto drop-shadow-[0_0_10px_rgba(0,255,136,0.6)] animate-bounce" viewBox="0 0 64 64"><polygon points="32,6 40,22 58,24 44,38 48,56 32,46 16,56 20,38 6,24 24,22" fill="#00ff88"/><text x="32" y="36" font-size="14" font-weight="black" fill="#050907" text-anchor="middle">VIP</text></svg>`;
+            } else {
+                return `<svg class="w-20 h-20 mx-auto drop-shadow-[0_0_10px_rgba(255,215,0,0.7)] animate-pulse" viewBox="0 0 64 64"><polygon points="36,4 16,36 32,36 28,60 52,28 36,28" fill="#ffd700"/></svg>`;
+            }
+        }
+
+        function previewAutoIcon() {
+            const name = document.getElementById('uploadName').value;
+            document.getElementById('autoIconPreviewBox').innerHTML = getMinecraftSvg(name);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+            const target = document.getElementById('view-' + tabId);
+            if (target) target.classList.remove('hidden');
+
+            ['home', 'cart', 'account', 'upload'].forEach(t => {
+                const btn = document.getElementById('nav' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (btn) {
+                    btn.className = (t === tabId) 
+                        ? 'flex flex-col items-center gap-1 text-neonGreen transition font-bold text-xs' 
+                        : 'flex flex-col items-center gap-1 text-gray-400 hover:text-neonGreen transition text-xs font-medium';
+                }
+            });
+
+            if (tabId === 'cart') renderCartView();
+            if (tabId === 'account') { cancelAccountEdits(); renderAccountView(); }
+            if (tabId === 'upload') renderAdminPanel();
+        }
+
+        function renderHomeItems() {
+            const searchInput = document.getElementById('searchInput');
+            const query = searchInput ? searchInput.value.toLowerCase() : '';
+            const prods = getProducts();
+            const grid = document.getElementById('productGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const filtered = prods.filter(p => p.name.toLowerCase().includes(query));
+            if (filtered.length === 0) {
+                grid.innerHTML = '<p class="text-gray-400 col-span-full text-center py-8">No items found.</p>';
+                return;
+            }
+
+            filtered.forEach(p => {
+                grid.innerHTML += `
+                    <div class="bg-cardBg border border-borderGreen rounded-2xl p-4 text-center transition hover:border-neonGreen hover:-translate-y-1 shadow-lg flex flex-col justify-between">
+                        <div>
+                            <div class="py-4 bg-darkBg rounded-xl mb-3 border border-borderGreen flex items-center justify-center">
+                                ${getMinecraftSvg(p.name)}
+                            </div>
+                            <h3 class="text-base font-bold mb-1">${p.name}</h3>
+                            <p class="text-xs text-gray-400 mb-2">${p.desc || 'Minecraft In-Game Item'}</p>
+                            <div class="text-neonGreen font-black text-lg mb-3">₹${p.price}</div>
+                        </div>
+                        <button onclick="addToCart(${p.id})" class="w-full bg-neonGreen text-black font-extrabold py-2.5 rounded-xl transition hover:opacity-90 text-xs shadow-[0_0_10px_#00ff88]">Add to Cart</button>
+                    </div>
+                `;
+            });
+        }
+
+        function addToCart(id) {
+            const prods = getProducts();
+            const item = prods.find(p => p.id === id);
+            if (!item) return;
+            const cart = getCart();
+            cart.push(item);
+            setCart(cart);
+            updateBadges();
+            showToast(`${item.name} added to cart!`);
+        }
+
+        function renderCartView() {
+            const cart = getCart();
+            const list = document.getElementById('cartItemsList');
+            if (!list) return;
+            list.innerHTML = '';
+            let subtotal = 0;
+
+            if (cart.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">Your cart is empty.</p>';
+                document.getElementById('cartQrDisplayArea').innerHTML = `
+                    <div class="text-gray-500 text-xs py-6">Add an item to the cart to view its specific payment scanner.</div>
+                `;
+            } else {
+                cart.forEach((item, idx) => {
+                    subtotal += item.price;
+                    list.innerHTML += `
+                        <div class="flex justify-between items-center bg-darkBg p-3 rounded-xl border border-borderGreen text-xs">
+                            <div>
+                                <b class="text-white">${item.name}</b>
+                                <span class="text-neonGreen ml-2 font-bold">₹${item.price}</span>
+                            </div>
+                            <button onclick="removeFromCart(${idx})" class="text-dangerRed font-bold hover:underline">Remove</button>
+                        </div>
+                    `;
+                });
+
+                // DYNAMIC QR SCANNER DISPLAY FOR SPECIFIC CART ITEM
+                const activeItem = cart[cart.length - 1]; // Displays scanner for the current/last added item
+                const qrArea = document.getElementById('cartQrDisplayArea');
+                
+                if (activeItem.qrImage) {
+                    qrArea.innerHTML = `
+                        <div class="text-xs text-neonGreen font-bold mb-2">QR Scanner for: ${activeItem.name}</div>
+                        <img src="${activeItem.qrImage}" class="w-36 h-36 object-contain border-2 border-neonGreen rounded-xl bg-white p-1 shadow-lg">
+                    `;
+                } else {
+                    // SVG fallback QR scanner representation
+                    qrArea.innerHTML = `
+                        <div class="text-xs text-neonGreen font-bold mb-2">Specific Scanner for: ${activeItem.name}</div>
+                        <div class="w-32 h-32 bg-darkBg border-2 border-neonGreen rounded-xl flex flex-col items-center justify-center p-2 text-center shadow-[0_0_10px_#00ff88]">
+                            <svg class="w-16 h-16 text-neonGreen mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h8v8H3zm2 2v4h4V5zm8-2h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zm13-2h3v2h-3zm-3 0h2v3h-2zm3 3h3v5h-3zm-3 2h2v3h-2zm-3-2h2v2h-2zm0 3h2v2h-2z"/></svg>
+                            <span class="text-[10px] text-gray-300 font-mono">UPI: BOXSMP@UPI</span>
+                        </div>
+                    `;
+                }
+            }
+            document.getElementById('cartSubtotal').innerText = '₹' + subtotal;
+        }
+
+        function removeFromCart(idx) {
+            const cart = getCart();
+            cart.splice(idx, 1);
+            setCart(cart);
+            updateBadges();
+            renderCartView();
+        }
+
+        function submitOrder() {
+            const cart = getCart();
+            if (cart.length === 0) { showToast('Your cart is empty!'); return; }
+            const ign = document.getElementById('buyerIGN').value.trim();
+            if (!ign) { showToast('Please enter your Minecraft Username!'); return; }
+            if (!document.getElementById('agreementCheck').checked) { showToast('Please agree to Privacy Policy!'); return; }
+            const proof = document.getElementById('paymentProofFile').files[0];
+            if (!proof) { showToast('Please upload payment screenshot!'); return; }
+
+            let subtotal = cart.reduce((a, b) => a + b.price, 0);
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const orders = getOrders();
+                orders.push({
+                    id: Math.floor(1000 + Math.random() * 9000),
+                    ign: ign,
+                    itemSummary: cart.map(i => i.name).join(', '),
+                    total: subtotal,
+                    proof: e.target.result,
+                    status: 'Pending'
+                });
+                setOrders(orders);
+                setCart([]);
+                updateBadges();
+                switchTab('home');
+                showToast('Order submitted successfully!');
+            };
+            reader.readAsDataURL(proof);
+        }
+
+        function handleTopAccountClick() {
+            if (currentUser) {
+                switchTab('account');
+            } else {
+                openAuthModal();
+            }
+        }
+
+        function openAuthModal() {
+            document.getElementById('authModal').classList.remove('hidden');
+            setAuthMode(false);
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+        }
+
+        function openPrivacyModal() {
+            document.getElementById('privacyModal').classList.remove('hidden');
+        }
+
+        function closePrivacyModal() {
+            document.getElementById('privacyModal').classList.add('hidden');
+        }
+
+        function toggleAuthMode() {
+            setAuthMode(!isSignup);
+        }
+
+        function setAuthMode(signup) {
+            isSignup = signup;
+            document.getElementById('authInputUser').value = '';
+            document.getElementById('authInputPass').value = '';
+            document.getElementById('regMinecraft').value = '';
+            document.getElementById('regEmail').value = '';
+
+            const extra = document.getElementById('signupExtraFields');
+            const title = document.getElementById('authModalTitle');
+            const sub = document.getElementById('authModalSub');
+            const btn = document.getElementById('authActionBtn');
+
+            if (isSignup) {
+                extra.classList.remove('hidden');
+                title.innerText = 'Sign Up';
+                sub.innerText = 'Create your BOX SMP account';
+                btn.innerText = 'Sign Up';
+            } else {
+                extra.classList.add('hidden');
+                title.innerText = 'Login';
+                sub.innerText = 'Enter your credentials';
+                btn.innerText = 'Login';
+            }
+        }
+
+        function handleAuthSubmit() {
+            const u = document.getElementById('authInputUser').value.trim();
+            const p = document.getElementById('authInputPass').value.trim();
+
+            if (!u || !p) { showToast('Please fill all required fields!'); return; }
+
+            let users = getUsers();
+
+            if (isSignup) {
+                const mc = document.getElementById('regMinecraft').value.trim();
+                const email = document.getElementById('regEmail').value.trim();
+
+                if (!mc || !email) { showToast('Please fill all signup fields!'); return; }
+                if (users.find(x => x.username === u || x.email === email)) { showToast('User or Email already exists!'); return; }
+
+                users.push({ username: u, minecraft: mc, email: email, password: p, role: "Verified Member" });
+                setUsers(users);
+                currentUser = u;
+                closeAuthModal();
+                updateNavState();
+                switchTab('account');
+                showToast('Account created successfully!');
+            } else {
+                const found = users.find(x => (x.username === u || x.email === u) && x.password === p);
+                if (found) {
+                    currentUser = found.username;
+                    closeAuthModal();
+                    updateNavState();
+                    switchTab('account');
+                    showToast('Logged in successfully!');
+                } else {
+                    showToast('Invalid credentials!');
+                }
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            updateNavState();
+            switchTab('home');
+            showToast('Logged out successfully');
+        }
+
+        function renderAccountView() {
+            if (!currentUser) return;
+            const users = getUsers();
+            const userObj = users.find(x => x.username === currentUser) || DEFAULT_OWNER;
+
+            // Compute Initials
+            let initials = 'GS';
+            const parts = userObj.username.trim().split(/\s+/);
+            if (parts.length > 1) {
+                initials = (parts[0][0] + parts[1][0]).toUpperCase();
+            } else if (userObj.username.length >= 2) {
+                initials = userObj.username.substring(0, 2).toUpperCase();
+            } else {
+                initials = userObj.username.toUpperCase();
+            }
+
+            document.getElementById('accountAvatarInitials').innerText = initials;
+            document.getElementById('accountDisplayName').innerText = userObj.username;
+            document.getElementById('accountDisplayRole').innerText = userObj.role || 'Verified Member';
+            document.getElementById('accDetailUser').innerText = userObj.username;
+            document.getElementById('accDetailMc').innerText = userObj.minecraft || 'not_gaganxds';
+            document.getElementById('accDetailEmail').innerText = userObj.email || 'boxsmp@gmail.com';
+            document.getElementById('accDetailRole').innerText = userObj.role || 'Verified Member';
+        }
+
+        function enterEditAccountMode() {
+            const users = getUsers();
+            const userObj = users.find(x => x.username === currentUser) || DEFAULT_OWNER;
+
+            document.getElementById('editAccName').value = userObj.username;
+            document.getElementById('editAccMc').value = userObj.minecraft || 'not_gaganxds';
+            document.getElementById('editAccEmail').value = userObj.email || 'boxsmp@gmail.com';
+            document.getElementById('editAccCurrentPass').value = '';
+            document.getElementById('editAccNewPass').value = '';
+
+            document.getElementById('accountDisplayBox').classList.add('hidden');
+            document.getElementById('accountEditBox').classList.remove('hidden');
+        }
+
+        function cancelAccountEdits() {
+            const editBox = document.getElementById('accountEditBox');
+            const displayBox = document.getElementById('accountDisplayBox');
+            if (editBox) editBox.classList.add('hidden');
+            if (displayBox) displayBox.classList.remove('hidden');
+        }
+
+        function saveAccountEdits() {
+            const newName = document.getElementById('editAccName').value.trim();
+            const newMc = document.getElementById('editAccMc').value.trim();
+            const newEmail = document.getElementById('editAccEmail').value.trim();
+            const currentPass = document.getElementById('editAccCurrentPass').value.trim();
+            const newPass = document.getElementById('editAccNewPass').value.trim();
+
+            if (!newName || !newMc || !newEmail) { 
+                showToast('Name, IGN and Email cannot be empty!'); 
+                return; 
+            }
+            if (!currentPass) { 
+                showToast('Enter current password to save changes!'); 
+                return; 
+            }
+
+            let users = getUsers();
+            const userIdx = users.findIndex(x => x.username === currentUser);
+
+            if (userIdx === -1) {
+                showToast('Account profile not found!');
+                return;
+            }
+
+            // Confirm Current Password
+            if (users[userIdx].password !== currentPass) {
+                showToast('Incorrect current password!');
+                return;
+            }
+
+            // Update profile
+            users[userIdx].username = newName;
+            users[userIdx].minecraft = newMc;
+            users[userIdx].email = newEmail;
+            if (newPass) {
+                users[userIdx].password = newPass;
+            }
+
+            setUsers(users);
+            currentUser = newName;
+
+            cancelAccountEdits();
+            renderAccountView();
+            updateNavState();
+            showToast('Account details saved successfully!');
+        }
+
+        function updateNavState() {
+            const navContainer = document.getElementById('bottomNavContainer');
+            const topBtn = document.getElementById('topAuthBtn');
+
+            let navHtml = `
+                <button onclick="switchTab('home')" id="navHome" class="flex flex-col items-center gap-1 text-neonGreen transition font-bold text-xs">
+                    <span class="text-xl">🏠</span>
+                    <span>Home</span>
+                </button>
+                <button onclick="switchTab('cart')" id="navCart" class="relative flex flex-col items-center gap-1 text-gray-400 hover:text-neonGreen transition text-xs font-medium">
+                    <span class="text-xl">🛒</span>
+                    <span>Cart</span>
+                    <span id="cartBadge" class="absolute -top-1 -right-2 bg-dangerRed text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+                </button>
+            `;
+
+            if (currentUser) {
+                topBtn.innerText = currentUser;
+                navHtml += `
+                    <button onclick="switchTab('account')" id="navAccount" class="flex flex-col items-center gap-1 text-gray-400 hover:text-neonGreen transition text-xs font-medium">
+                        <span class="text-xl">👤</span>
+                        <span>Account</span>
+                    </button>
+                `;
+                // STRICT GUARD: Upload tab ONLY renders for 'Gagan shina'
+                if (currentUser === 'Gagan shina') {
+                    navHtml += `
+                        <button onclick="switchTab('upload')" id="navUpload" class="flex flex-col items-center gap-1 text-gray-400 hover:text-neonGreen transition text-xs font-medium">
+                            <span class="text-xl">⬆️</span>
+                            <span>Upload</span>
+                        </button>
+                    `;
+                }
+            } else {
+                topBtn.innerText = 'Login / Sign Up';
+            }
+
+            if (navContainer) navContainer.innerHTML = navHtml;
+            updateBadges();
+        }
+
+        function renderAdminPanel() {
+            document.getElementById('adminPanelUserLabel').innerText = currentUser;
+            renderAdminPromos();
+            renderAdminOrders();
+            renderAdminEditDelete();
+        }
+
+        function renderAdminPromos() {
+            const promos = getPromos();
+            const list = document.getElementById('adminPromoList');
+            if (!list) return;
+            list.innerHTML = promos.map((pr, i) => `
+                <div class="bg-cardBg border border-borderGreen p-3 rounded-xl flex justify-between items-center text-xs">
+                    <div><strong class="text-neonGreen">${pr.code}</strong> - ₹${pr.discount} off</div>
+                    <button onclick="deletePromo(${i})" class="text-dangerRed font-bold hover:underline">Delete</button>
+                </div>
+            `).join('') || '<p class="text-gray-400 text-xs">No active promo codes.</p>';
+        }
+
+        function createPromoCode() {
+            const code = document.getElementById('promoName').value.trim().toUpperCase();
+            const discount = parseFloat(document.getElementById('promoDiscount').value);
+            const limit = parseInt(document.getElementById('promoLimit').value);
+            if (!code || isNaN(discount) || isNaN(limit)) { showToast('Fill all promo code fields!'); return; }
+            const promos = getPromos();
+            promos.push({ code, discount, limit });
+            setPromos(promos);
+            document.getElementById('promoName').value = '';
+            document.getElementById('promoDiscount').value = '';
+            document.getElementById('promoLimit').value = '';
+            renderAdminPromos();
+            showToast('Promo code created!');
+        }
+
+        function deletePromo(i) {
+            const promos = getPromos();
+            promos.splice(i, 1);
+            setPromos(promos);
+            renderAdminPromos();
+        }
+
+        function publishNewItem() {
+            const name = document.getElementById('uploadName').value.trim();
+            const price = parseFloat(document.getElementById('uploadPrice').value);
+            const desc = document.getElementById('uploadDesc').value.trim();
+            const qrFile = document.getElementById('uploadQrFile').files[0];
+
+            if (!name || isNaN(price)) { showToast('Enter valid item name and price!'); return; }
+
+            const saveItem = (qrImageBase64) => {
+                const prods = getProducts();
+                prods.push({ id: Date.now(), name, price, desc: desc || 'Minecraft Item', qrImage: qrImageBase64 || null });
+                setProducts(prods);
+
+                document.getElementById('uploadName').value = '';
+                document.getElementById('uploadPrice').value = '';
+                document.getElementById('uploadDesc').value = '';
+                document.getElementById('uploadQrFile').value = '';
+                renderHomeItems();
+                renderAdminEditDelete();
+                showToast('Item published successfully!');
+            };
+
+            if (qrFile) {
+                const reader = new FileReader();
+                reader.onload = (e) => saveItem(e.target.result);
+                reader.readAsDataURL(qrFile);
+            } else {
+                saveItem(null);
+            }
+        }
+
+        function renderAdminOrders() {
+            const orders = getOrders();
+            const tBody = document.getElementById('adminOrderTable');
+            if (!tBody) return;
+            tBody.innerHTML = orders.map((o, idx) => `
+                <tr class="border-b border-borderGreen">
+                    <td class="p-3">#${o.id}</td>
+                    <td class="p-3 font-bold text-neonGreen">${o.ign}</td>
+                    <td class="p-3">${o.itemSummary} (₹${o.total})</td>
+                    <td class="p-3"><a href="${o.proof}" target="_blank"><img src="${o.proof}" class="w-10 h-10 object-cover rounded border border-neonGreen"></a></td>
+                    <td class="p-3 font-bold ${o.status === 'Accepted' ? 'text-neonGreen' : o.status === 'Declined' ? 'text-dangerRed' : 'text-orange-400'}">${o.status}</td>
+                    <td class="p-3">
+                        ${o.status === 'Pending' ? `
+                            <button onclick="updateOrderStatus(${idx}, 'Accepted')" class="border border-neonGreen text-neonGreen px-2 py-1 rounded text-xs font-bold mr-1 hover:bg-neonGreen hover:text-black">Accept</button>
+                            <button onclick="updateOrderStatus(${idx}, 'Declined')" class="border border-dangerRed text-dangerRed px-2 py-1 rounded text-xs font-bold hover:bg-dangerRed hover:text-white">Decline</button>
+                        ` : 'Done'}
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="6" class="p-4 text-center text-gray-400 text-xs">No orders placed yet.</td></tr>';
+        }
+
+        function updateOrderStatus(idx, status) {
+            const orders = getOrders();
+            orders[idx].status = status;
+            setOrders(orders);
+            const notifs = getNotifs();
+            notifs.unshift(`Order #${orders[idx].id} marked as ${status}`);
+            setNotifs(notifs);
+            renderAdminOrders();
+            updateBadges();
+            showToast(`Order #${orders[idx].id} ${status}`);
+        }
+
+        function renderAdminEditDelete() {
+            const prods = getProducts();
+            const list = document.getElementById('adminEditDeleteList');
+            if (!list) return;
+            list.innerHTML = prods.map((p) => `
+                <div class="bg-cardBg border border-borderGreen p-3 rounded-xl flex justify-between items-center text-xs">
+                    <div><b>${p.name}</b> - ₹${p.price}</div>
+                    <div class="flex gap-2">
+                        <button onclick="openEditModal(${p.id})" class="border border-neonGreen text-neonGreen px-3 py-1 rounded font-bold hover:bg-neonGreen hover:text-black transition">Edit Item & Scanner</button>
+                        <button onclick="deleteProduct(${p.id})" class="text-dangerRed font-bold hover:underline">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openEditModal(id) {
+            const prods = getProducts();
+            const p = prods.find(x => x.id === id);
+            if (!p) return;
+            document.getElementById('editItemId').value = p.id;
+            document.getElementById('editItemName').value = p.name;
+            document.getElementById('editItemPrice').value = p.price;
+            document.getElementById('editItemDesc').value = p.desc || '';
+            document.getElementById('editItemQrFile').value = '';
+
+            const preview = document.getElementById('editItemQrPreview');
+            if (p.qrImage) {
+                preview.innerHTML = `<img src="${p.qrImage}" class="w-20 h-20 mx-auto rounded border border-neonGreen object-cover">`;
+            } else {
+                preview.innerHTML = `<span class="text-xs text-gray-500">No custom scanner attached</span>`;
+            }
+
+            document.getElementById('editItemModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editItemModal').classList.add('hidden');
+        }
+
+        function saveEditedItem() {
+            const id = parseInt(document.getElementById('editItemId').value);
+            const name = document.getElementById('editItemName').value.trim();
+            const price = parseFloat(document.getElementById('editItemPrice').value);
+            const desc = document.getElementById('editItemDesc').value.trim();
+            const qrFile = document.getElementById('editItemQrFile').files[0];
+
+            if (!name || isNaN(price)) { showToast('Enter valid item name and price!'); return; }
+
+            const applyUpdates = (qrImageBase64) => {
+                let prods = getProducts();
+                const idx = prods.findIndex(x => x.id === id);
+                if (idx !== -1) {
+                    prods[idx].name = name;
+                    prods[idx].price = price;
+                    prods[idx].desc = desc || 'Minecraft Item';
+                    if (qrImageBase64 !== undefined) {
+                        prods[idx].qrImage = qrImageBase64;
+                    }
+                    setProducts(prods);
+                }
+                closeEditModal();
+                renderHomeItems();
+                renderAdminEditDelete();
+                showToast('Item & Scanner updated successfully!');
+            };
+
+            if (qrFile) {
+                const reader = new FileReader();
+                reader.onload = (e) => applyUpdates(e.target.result);
+                reader.readAsDataURL(qrFile);
+            } else {
+                applyUpdates(undefined); // Keep existing scanner if no new file selected
+            }
+        }
+
+        function deleteProduct(id) {
+            let prods = getProducts();
+            prods = prods.filter(p => p.id !== id);
+            setProducts(prods);
+            renderHomeItems();
+            renderAdminEditDelete();
+            showToast('Item deleted!');
+        }
+
+        function openNotifications() {
+            const notifs = getNotifs();
+            const list = document.getElementById('notifList');
+            if (list) {
+                list.innerHTML = notifs.map(n => `<div class="bg-darkBg border-l-4 border-neonGreen p-3 rounded-xl text-xs">${n}</div>`).join('') || '<p class="text-gray-400 text-xs text-center py-4">No notifications.</p>';
+            }
+            document.getElementById('notifModal').classList.remove('hidden');
+        }
+
+        function updateBadges() {
+            const cb = document.getElementById('cartBadge');
+            const nb = document.getElementById('notifBadge');
+            if (cb) cb.innerText = getCart().length;
+            if (nb) nb.innerText = getNotifs().length;
+        }
+    </script>
+</body>
+</html>
